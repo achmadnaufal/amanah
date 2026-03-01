@@ -1,7 +1,7 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useCallback } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity, Modal,
-  TextInput, Alert, Platform,
+  TextInput, Alert, Platform, Switch,
 } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -11,7 +11,7 @@ import { ColorScheme } from '../../constants/colors';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { EmptyState } from '../../components/ui/EmptyState';
-import { useFinanceStore, Transaction } from '../../store/useFinanceStore';
+import { useFinanceStore, Transaction, RecurringTemplate } from '../../store/useFinanceStore';
 import { formatIDR } from '../../utils/currency';
 import { INCOME_CATEGORIES, EXPENSE_CATEGORIES, ALL_CATEGORIES, getCategoryById } from '../../constants/categories';
 
@@ -21,7 +21,11 @@ export default function Transactions() {
   const { colors, isDark } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
-  const { transactions, addTransaction, updateTransaction, deleteTransaction } = useFinanceStore();
+  const {
+    transactions, addTransaction, updateTransaction, deleteTransaction,
+    recurringTemplates, addRecurringTemplate, updateRecurringTemplate, deleteRecurringTemplate,
+    toggleRecurringTemplate, detectRecurringPatterns, dismissSuggestion,
+  } = useFinanceStore();
   const now = new Date();
   const [filterYear, setFilterYear] = useState(now.getFullYear());
   const [filterMonth, setFilterMonth] = useState(now.getMonth());
@@ -36,6 +40,19 @@ export default function Transactions() {
   const [txDate, setTxDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const swipeableRefs = useRef<Map<string, Swipeable>>(new Map());
+
+  // Recurring state
+  const [showRecurring, setShowRecurring] = useState(false);
+  const [recurringModal, setRecurringModal] = useState(false);
+  const [editingRecurring, setEditingRecurring] = useState<RecurringTemplate | null>(null);
+  const [recType, setRecType] = useState<'income' | 'expense'>('expense');
+  const [recAmount, setRecAmount] = useState('');
+  const [recCategory, setRecCategory] = useState('');
+  const [recNote, setRecNote] = useState('');
+  const [recDay, setRecDay] = useState('1');
+
+  const suggestions = useMemo(() => detectRecurringPatterns(), [transactions]);
+  const recCats = recType === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
 
   const filtered = transactions.filter((t) => {
     const d = new Date(t.date);
@@ -110,6 +127,71 @@ export default function Transactions() {
     ]);
   };
 
+  const openAddRecurring = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setEditingRecurring(null);
+    setRecType('expense');
+    setRecAmount('');
+    setRecCategory('');
+    setRecNote('');
+    setRecDay('1');
+    setRecurringModal(true);
+  };
+
+  const openEditRecurring = (tmpl: RecurringTemplate) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setEditingRecurring(tmpl);
+    setRecType(tmpl.type);
+    setRecAmount(tmpl.amount.toString());
+    setRecCategory(tmpl.category);
+    setRecNote(tmpl.note || '');
+    setRecDay(tmpl.dayOfMonth.toString());
+    setRecurringModal(true);
+  };
+
+  const handleSaveRecurring = () => {
+    if (!recAmount || !recCategory) return Alert.alert('Missing Fields', 'Please enter an amount and select a category.');
+    const day = Math.min(Math.max(parseInt(recDay, 10) || 1, 1), 28);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+    if (editingRecurring) {
+      updateRecurringTemplate(editingRecurring.id, {
+        amount: parseInt(recAmount, 10),
+        category: recCategory,
+        type: recType,
+        note: recNote,
+        dayOfMonth: day,
+      });
+    } else {
+      addRecurringTemplate({
+        amount: parseInt(recAmount, 10),
+        category: recCategory,
+        type: recType,
+        note: recNote,
+        dayOfMonth: day,
+        active: true,
+      });
+    }
+    setRecurringModal(false);
+  };
+
+  const handleDeleteRecurring = (id: string) => {
+    Alert.alert('Delete?', 'Remove this recurring transaction?', [
+      { text: 'Cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => deleteRecurringTemplate(id) },
+    ]);
+  };
+
+  const handleAcceptSuggestion = useCallback((s: { category: string; amount: number; type: 'income' | 'expense' }) => {
+    addRecurringTemplate({
+      amount: s.amount,
+      category: s.category,
+      type: s.type,
+      dayOfMonth: 1,
+      active: true,
+    });
+  }, [addRecurringTemplate]);
+
   const cats = txType === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
 
   const prevMonth = () => {
@@ -166,6 +248,85 @@ export default function Transactions() {
         ))}
       </ScrollView>
 
+      {/* Recurring Section Toggle */}
+      <TouchableOpacity
+        style={[styles.recurringToggle, showRecurring && { borderBottomColor: colors.accent }]}
+        onPress={() => setShowRecurring(!showRecurring)}
+      >
+        <Text style={styles.recurringToggleText}>
+          {showRecurring ? '▼' : '▶'} Recurring ({recurringTemplates.length})
+          {suggestions.length > 0 && !showRecurring ? ` · ${suggestions.length} suggestion${suggestions.length > 1 ? 's' : ''}` : ''}
+        </Text>
+      </TouchableOpacity>
+
+      {showRecurring && (
+        <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
+          {/* Suggestions */}
+          {suggestions.length > 0 && (
+            <Card style={{ borderColor: colors.accent }}>
+              <Text style={styles.recSectionLabel}>Suggested Recurring</Text>
+              {suggestions.map((s) => {
+                const cat = getCategoryById(s.category);
+                const key = `${s.category}:${s.amount}`;
+                return (
+                  <View key={key} style={styles.suggestionRow}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.recLabel}>{cat?.icon || '💰'} {cat?.label || s.category} — {formatIDR(s.amount)}</Text>
+                      <Text style={styles.recHint}>Detected {s.occurrences} months</Text>
+                    </View>
+                    <TouchableOpacity style={styles.suggestBtn} onPress={() => handleAcceptSuggestion(s)}>
+                      <Text style={styles.suggestBtnText}>Add</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => dismissSuggestion(key)} style={{ padding: 6 }}>
+                      <Text style={{ color: colors.textMuted, fontSize: 16 }}>✕</Text>
+                    </TouchableOpacity>
+                  </View>
+                );
+              })}
+            </Card>
+          )}
+
+          {/* Recurring Templates List */}
+          {recurringTemplates.length === 0 ? (
+            <EmptyState
+              icon="🔄"
+              title="No recurring transactions"
+              subtitle="Add monthly salary, rent, or subscriptions so they auto-apply each month."
+              ctaLabel="Add Recurring"
+              onCta={openAddRecurring}
+            />
+          ) : (
+            recurringTemplates.map((tmpl) => {
+              const cat = getCategoryById(tmpl.category);
+              return (
+                <Card key={tmpl.id} style={{ opacity: tmpl.active !== false ? 1 : 0.5 }}>
+                  <TouchableOpacity onPress={() => openEditRecurring(tmpl)} style={styles.txRow}>
+                    <Text style={styles.txIcon}>{cat?.icon || '💸'}</Text>
+                    <View style={styles.txInfo}>
+                      <Text style={styles.txCat}>{cat?.label || tmpl.category}</Text>
+                      <Text style={styles.txNote}>Day {tmpl.dayOfMonth} · {tmpl.type}{tmpl.note ? ` · ${tmpl.note}` : ''}</Text>
+                    </View>
+                    <Text style={[styles.txAmount, { color: tmpl.type === 'income' ? colors.success : colors.error }]}>
+                      {tmpl.type === 'income' ? '+' : '-'}{formatIDR(tmpl.amount)}
+                    </Text>
+                    <Switch
+                      value={tmpl.active !== false}
+                      onValueChange={() => toggleRecurringTemplate(tmpl.id)}
+                      trackColor={{ true: colors.success }}
+                      style={{ marginLeft: 8 }}
+                    />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => handleDeleteRecurring(tmpl.id)}>
+                    <Text style={{ color: colors.error, fontSize: 12, marginTop: 4 }}>Remove</Text>
+                  </TouchableOpacity>
+                </Card>
+              );
+            })
+          )}
+          <Button title="+ Add Recurring" onPress={openAddRecurring} style={{ marginBottom: 8 }} />
+        </View>
+      )}
+
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
         {Object.keys(grouped).length === 0 ? (
           <EmptyState
@@ -214,6 +375,76 @@ export default function Transactions() {
       <TouchableOpacity style={styles.fab} onPress={openAdd}>
         <Text style={styles.fabText}>+</Text>
       </TouchableOpacity>
+
+      {/* Add/Edit Recurring Modal */}
+      <Modal visible={recurringModal} animationType="slide" transparent>
+        <View style={styles.modalBg}>
+          <View style={styles.modal}>
+            <Text style={styles.modalTitle}>{editingRecurring ? 'Edit Recurring' : 'Add Recurring'}</Text>
+
+            <View style={styles.typeRow}>
+              {(['income', 'expense'] as const).map((t) => {
+                const isSelected = recType === t;
+                return (
+                  <TouchableOpacity
+                    key={t}
+                    style={[styles.typeBtn, isSelected && { backgroundColor: t === 'income' ? colors.success : colors.error }]}
+                    onPress={() => { setRecType(t); setRecCategory(''); }}
+                  >
+                    <Text style={[styles.typeBtnText, isSelected && { color: '#FFFFFF' }]}>
+                      {t === 'income' ? '📈 Income' : '📉 Expense'}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <TextInput
+              style={styles.input}
+              placeholder="Amount (IDR)"
+              placeholderTextColor={colors.textMuted}
+              keyboardType="numeric"
+              value={recAmount}
+              onChangeText={setRecAmount}
+            />
+
+            <TextInput
+              style={styles.input}
+              placeholder="Day of month (1-28)"
+              placeholderTextColor={colors.textMuted}
+              keyboardType="numeric"
+              value={recDay}
+              onChangeText={setRecDay}
+            />
+
+            <Text style={styles.sectionLabel}>Category</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+              {recCats.map((c) => (
+                <TouchableOpacity
+                  key={c.id}
+                  onPress={() => setRecCategory(c.id)}
+                  style={[styles.catChip, recCategory === c.id && { borderColor: colors.accent }]}
+                >
+                  <Text style={styles.catChipText}>{c.icon} {c.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            <TextInput
+              style={styles.input}
+              placeholder="Note (optional)"
+              placeholderTextColor={colors.textMuted}
+              value={recNote}
+              onChangeText={setRecNote}
+            />
+
+            <View style={styles.modalBtns}>
+              <Button title="Cancel" variant="secondary" onPress={() => setRecurringModal(false)} style={{ flex: 1, marginRight: 8 }} />
+              <Button title="Save" onPress={handleSaveRecurring} style={{ flex: 1 }} />
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* Add/Edit Transaction Modal */}
       <Modal visible={modalVisible} animationType="slide" transparent>
@@ -343,4 +574,12 @@ const createStyles = (colors: ColorScheme) =>
     catChip: { backgroundColor: colors.surfaceAlt, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, marginRight: 8, borderWidth: 1, borderColor: colors.border },
     catChipText: { color: colors.text, fontSize: 13 },
     modalBtns: { flexDirection: 'row', marginTop: 8 },
+    recurringToggle: { paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border },
+    recurringToggleText: { color: colors.accent, fontSize: 13, fontWeight: '600' },
+    recSectionLabel: { color: colors.accent, fontSize: 12, fontWeight: '600', marginBottom: 8, textTransform: 'uppercase' as const },
+    recLabel: { color: colors.text, fontSize: 13, fontWeight: '500' },
+    recHint: { color: colors.textMuted, fontSize: 11 },
+    suggestionRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6, borderTopWidth: 1, borderTopColor: colors.border },
+    suggestBtn: { backgroundColor: colors.primaryLight, borderRadius: 6, paddingHorizontal: 10, paddingVertical: 4, marginHorizontal: 6 },
+    suggestBtnText: { color: '#FFFFFF', fontSize: 12, fontWeight: '600' },
   });

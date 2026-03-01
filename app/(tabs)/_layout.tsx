@@ -13,11 +13,16 @@ const THEME_OPTIONS: { mode: ThemeMode; label: string; icon: string }[] = [
 
 export default function TabsLayout() {
   const hasOnboarded = useAppStore((s) => s.hasOnboarded);
+  const hasCompletedSetup = useAppStore((s) => s.hasCompletedSetup);
   const { colors, mode, setMode } = useTheme();
   const [themeModal, setThemeModal] = useState(false);
 
   if (!hasOnboarded) {
     return <Redirect href={'/onboarding' as any} />;
+  }
+
+  if (!hasCompletedSetup) {
+    return <Redirect href={'/setup' as any} />;
   }
 
   return (
