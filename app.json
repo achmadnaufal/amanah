@@ -14,9 +14,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.amanah"
+      "bundleIdentifier": "com.achmadnaufal.amanah"
     },
     "android": {
+      "package": "com.achmadnaufal.amanah",
       "adaptiveIcon": {
         "backgroundColor": "#1B5E20",
         "foregroundImage": "./assets/android-icon-foreground.png",

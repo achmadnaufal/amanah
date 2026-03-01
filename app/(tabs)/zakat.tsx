@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TextInput, Modal } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { Colors } from '../../constants/colors';
 import { Card } from '../../components/ui/Card';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
 import { Button } from '../../components/ui/Button';
+import { EmptyState } from '../../components/ui/EmptyState';
 import { useZakatStore } from '../../store/useZakatStore';
 import { formatIDR } from '../../utils/currency';
 import { calculateZakat, NISAB_GOLD_GRAMS } from '../../utils/zakat';
@@ -18,6 +20,7 @@ export default function ZakatScreen() {
   const { zakatAmount, nisab, netAssets, isWajib } = calculateZakat(totalAssets, liabilities.hutangJangkaPendek, goldPricePerGram);
 
   const handlePay = () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     addPayment({ date: new Date().toISOString(), amount: zakatAmount, note: payNote });
     setPayModal(false);
     setPayNote('');
@@ -105,10 +108,16 @@ export default function ZakatScreen() {
       </Card>
 
       {/* Payment History */}
-      {payments.length > 0 && (
-        <Card>
-          <Text style={styles.sectionTitle}>📜 Payment History</Text>
-          {payments.map((p) => (
+      <Card>
+        <Text style={styles.sectionTitle}>📜 Payment History</Text>
+        {payments.length === 0 ? (
+          <EmptyState
+            icon="🤲"
+            title="No Zakat payments yet"
+            subtitle="Your Zakat payment history will appear here after you record a payment."
+          />
+        ) : (
+          payments.map((p) => (
             <View key={p.id} style={styles.payRow}>
               <View>
                 <Text style={styles.payDate}>{new Date(p.date).toLocaleDateString('en-US')}</Text>
@@ -116,9 +125,9 @@ export default function ZakatScreen() {
               </View>
               <Text style={[styles.resultValue, { color: Colors.accent }]}>{formatIDR(p.amount)}</Text>
             </View>
-          ))}
-        </Card>
-      )}
+          ))
+        )}
+      </Card>
 
       {/* Pay Modal */}
       <Modal visible={payModal} transparent animationType="fade">

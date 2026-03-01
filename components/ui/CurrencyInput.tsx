@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, TextInput, Text, StyleSheet } from 'react-native';
 import { Colors } from '../../constants/colors';
 
@@ -11,6 +11,13 @@ interface CurrencyInputProps {
 
 export const CurrencyInput: React.FC<CurrencyInputProps> = ({ label, value, onChange, placeholder }) => {
   const [text, setText] = React.useState(value > 0 ? value.toString() : '');
+  const isFocused = useRef(false);
+
+  useEffect(() => {
+    if (!isFocused.current) {
+      setText(value > 0 ? value.toString() : '');
+    }
+  }, [value]);
 
   const handleChange = (val: string) => {
     const cleaned = val.replace(/[^0-9]/g, '');
@@ -27,6 +34,8 @@ export const CurrencyInput: React.FC<CurrencyInputProps> = ({ label, value, onCh
           style={styles.input}
           value={text}
           onChangeText={handleChange}
+          onFocus={() => { isFocused.current = true; }}
+          onBlur={() => { isFocused.current = false; }}
           keyboardType="numeric"
           placeholder={placeholder || '0'}
           placeholderTextColor={Colors.textMuted}

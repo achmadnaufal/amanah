@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { Colors } from '../../constants/colors';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
+import { EmptyState } from '../../components/ui/EmptyState';
 import { usePlannerStore, PortfolioAsset } from '../../store/usePlannerStore';
 import { formatIDR } from '../../utils/currency';
 
@@ -27,6 +29,7 @@ export default function Portfolio() {
   const total = portfolioAssets.reduce((s, a) => s + a.valueIDR, 0);
 
   const openAdd = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setEditId(null); setType('kas'); setLabel(''); setValueStr(''); setEmasGramStr('');
     setModal(true);
   };
@@ -50,6 +53,7 @@ export default function Portfolio() {
   };
 
   const handleDelete = (id: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     Alert.alert('Remove Asset?', 'This asset will be permanently deleted.', [
       { text: 'Cancel' },
       { text: 'Delete', style: 'destructive', onPress: () => deleteAsset(id) },
@@ -97,7 +101,13 @@ export default function Portfolio() {
         {/* Assets List */}
         <Text style={styles.listTitle}>Assets</Text>
         {portfolioAssets.length === 0 ? (
-          <Text style={styles.empty}>No assets yet. Add your halal assets.</Text>
+          <EmptyState
+            icon="📊"
+            title="No halal assets yet"
+            subtitle="Start building your riba-free portfolio. Add gold, sukuk, Islamic mutual funds, and more."
+            ctaLabel="Add First Asset"
+            onCta={openAdd}
+          />
         ) : (
           portfolioAssets.map((a) => {
             const at = ASSET_TYPES.find(t => t.id === a.type);

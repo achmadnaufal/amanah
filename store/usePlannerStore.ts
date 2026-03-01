@@ -33,7 +33,7 @@ export const usePlannerStore = create<PlannerState>()(
       setTarget: (amount) => set({ targetAmount: amount }),
       setMonthlySavings: (amount) => set({ monthlySavings: amount }),
       setAnnualReturnRate: (rate) => set({ annualReturnRate: rate }),
-      addAsset: (asset) => set((s) => ({ portfolioAssets: [...s.portfolioAssets, { ...asset, id: Date.now().toString() }] })),
+      addAsset: (asset) => set((s) => ({ portfolioAssets: [...s.portfolioAssets, { ...asset, id: crypto.randomUUID() }] })),
       updateAsset: (id, updates) => set((s) => ({
         portfolioAssets: s.portfolioAssets.map((a) => a.id === id ? { ...a, ...updates } : a)
       })),

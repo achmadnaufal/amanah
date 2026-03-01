@@ -1,15 +1,19 @@
-import React from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { Colors } from '../../constants/colors';
 import { Card } from '../../components/ui/Card';
 import { ProgressBar } from '../../components/ui/ProgressBar';
+import { DonutChart } from '../../components/charts/DonutChart';
 import { useFinanceStore } from '../../store/useFinanceStore';
 import { usePlannerStore } from '../../store/usePlannerStore';
 import { useZakatStore } from '../../store/useZakatStore';
 import { formatIDR } from '../../utils/currency';
 import { calculateZakat } from '../../utils/zakat';
 import { calculateFinancialFreedom } from '../../utils/planner';
-import { getCategoryById } from '../../constants/categories';
+import { getCategoryById, EXPENSE_CATEGORIES } from '../../constants/categories';
+import { useNetWorth } from '../../utils/netWorth';
+
+const CATEGORY_COLORS = ['#F9A825', '#3FB950', '#58A6FF', '#D29922', '#BC8CFF', '#39D353', '#F85149', '#8B949E', '#FF7B72', '#79C0FF', '#D2A8FF'];
 
 const HIJRI_MONTHS = ['Muharram','Safar','Rabi al-Awwal','Rabi al-Thani','Jumada al-Awwal','Jumada al-Thani','Rajab','Sha\'ban','Ramadan','Shawwal','Dhul Qa\'dah','Dhul Hijjah'];
 
@@ -31,11 +35,16 @@ export default function Dashboard() {
   const year = now.getFullYear();
   const month = now.getMonth();
 
-  const { transactions, getMonthlyIncome, getMonthlyExpense, getNetWorth } = useFinanceStore();
+  const { transactions, getMonthlyIncome, getMonthlyExpense, getMonthlyExpenseByCategory, budgets, applyRecurringTransactions } = useFinanceStore();
   const { targetAmount, monthlySavings, annualReturnRate } = usePlannerStore();
   const { assets, liabilities, goldPricePerGram } = useZakatStore();
 
-  const netWorth = getNetWorth();
+  // Apply recurring transactions on mount
+  useEffect(() => {
+    applyRecurringTransactions();
+  }, []);
+
+  const netWorth = useNetWorth();
   const monthlyIncome = getMonthlyIncome(year, month);
   const monthlyExpense = getMonthlyExpense(year, month);
   const recentTx = transactions.slice(0, 5);
@@ -46,6 +55,30 @@ export default function Dashboard() {
 
   const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   const hijriStr = toHijri(now);
+
+  // Spending by category for donut chart
+  const expenseByCategory = useMemo(() => getMonthlyExpenseByCategory(year, month), [transactions, year, month]);
+  const donutData = useMemo(() => {
+    return Object.entries(expenseByCategory).map(([catId, amount], i) => {
+      const cat = getCategoryById(catId);
+      return {
+        label: cat ? `${cat.icon} ${cat.label}` : catId,
+        value: amount,
+        color: CATEGORY_COLORS[i % CATEGORY_COLORS.length],
+      };
+    }).sort((a, b) => b.value - a.value);
+  }, [expenseByCategory]);
+
+  // Budget alerts
+  const budgetAlerts = useMemo(() => {
+    return Object.entries(budgets)
+      .map(([catId, limit]) => {
+        const spent = expenseByCategory[catId] || 0;
+        const cat = getCategoryById(catId);
+        return { catId, limit, spent, label: cat?.label || catId, icon: cat?.icon || '💰', pct: limit > 0 ? (spent / limit) * 100 : 0 };
+      })
+      .filter((b) => b.pct > 0);
+  }, [budgets, expenseByCategory]);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -87,21 +120,50 @@ export default function Dashboard() {
         )}
       </Card>
 
+      {/* Spending Donut Chart */}
+      {donutData.length > 0 && (
+        <Card>
+          <Text style={styles.cardLabel}>Spending Breakdown</Text>
+          <DonutChart data={donutData} />
+        </Card>
+      )}
+
+      {/* Budget Tracking */}
+      {budgetAlerts.length > 0 && (
+        <Card>
+          <Text style={styles.cardLabel}>Budget Tracking</Text>
+          {budgetAlerts.map((b) => (
+            <View key={b.catId} style={styles.budgetItem}>
+              <View style={styles.budgetHeader}>
+                <Text style={styles.budgetLabel}>{b.icon} {b.label}</Text>
+                <Text style={[styles.budgetSpent, b.pct > 100 && { color: Colors.error }]}>
+                  {formatIDR(b.spent)} / {formatIDR(b.limit)}
+                </Text>
+              </View>
+              <ProgressBar
+                progress={b.pct}
+                color={b.pct > 100 ? Colors.error : b.pct > 80 ? Colors.warning : Colors.success}
+              />
+            </View>
+          ))}
+        </Card>
+      )}
+
       {/* Financial Freedom */}
       <Card>
-        <Text style={styles.cardLabel}>🎯 Financial Freedom</Text>
+        <Text style={styles.cardLabel}>Financial Freedom</Text>
         <ProgressBar progress={progressPercent} showPercent color={Colors.accent} />
         <Text style={styles.subText}>
           {progressPercent < 100
             ? `Target: ${formatIDR(targetAmount)} · Est. ${yearsToGoal} years to go`
-            : 'Goal Reached! 🎉'}
+            : 'Goal Reached!'}
         </Text>
       </Card>
 
       {/* Zakat Reminder */}
       {isWajib && (
         <Card style={{ borderColor: Colors.accent }}>
-          <Text style={[styles.cardLabel, { color: Colors.accent }]}>🌙 Zakat Due</Text>
+          <Text style={[styles.cardLabel, { color: Colors.accent }]}>Zakat Due</Text>
           <Text style={styles.zakatText}>
             Your Zakat al-Mal is {formatIDR(zakatAmount)}. Time to give.
           </Text>
@@ -157,4 +219,8 @@ const styles = StyleSheet.create({
   txCat: { color: Colors.text, fontSize: 14, fontWeight: '500' },
   txNote: { color: Colors.textMuted, fontSize: 12 },
   txAmount: { fontSize: 14, fontWeight: '700' },
+  budgetItem: { marginBottom: 8 },
+  budgetHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
+  budgetLabel: { color: Colors.text, fontSize: 13 },
+  budgetSpent: { color: Colors.textMuted, fontSize: 12 },
 });

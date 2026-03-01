@@ -42,7 +42,7 @@ export const useZakatStore = create<ZakatState>()(
       setAssets: (a) => set((s) => ({ assets: { ...s.assets, ...a } })),
       setLiabilities: (l) => set((s) => ({ liabilities: { ...s.liabilities, ...l } })),
       setGoldPrice: (price) => set({ goldPricePerGram: price }),
-      addPayment: (p) => set((s) => ({ payments: [{ ...p, id: Date.now().toString() }, ...s.payments] })),
+      addPayment: (p) => set((s) => ({ payments: [{ ...p, id: crypto.randomUUID() }, ...s.payments] })),
     }),
     {
       name: 'amanah-zakat-store',

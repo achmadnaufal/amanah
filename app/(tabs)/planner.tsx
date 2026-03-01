@@ -4,14 +4,13 @@ import { Colors } from '../../constants/colors';
 import { Card } from '../../components/ui/Card';
 import { ProgressBar } from '../../components/ui/ProgressBar';
 import { usePlannerStore } from '../../store/usePlannerStore';
-import { useFinanceStore } from '../../store/useFinanceStore';
 import { formatIDR } from '../../utils/currency';
 import { calculateFinancialFreedom } from '../../utils/planner';
+import { useNetWorth } from '../../utils/netWorth';
 
 export default function Planner() {
   const { targetAmount, monthlySavings, annualReturnRate, setTarget, setMonthlySavings, setAnnualReturnRate } = usePlannerStore();
-  const { getNetWorth } = useFinanceStore();
-  const netWorth = getNetWorth();
+  const netWorth = useNetWorth();
 
   const result = calculateFinancialFreedom(netWorth, targetAmount, monthlySavings, annualReturnRate);
   const { yearsToGoal, monthsToGoal, progressPercent, projectedYear } = result;
