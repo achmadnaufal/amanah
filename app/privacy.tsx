@@ -1,9 +1,13 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ScrollView, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
-import { Colors } from '../constants/colors';
+import { useTheme } from '../constants/theme';
+import { ColorScheme } from '../constants/colors';
 
 export default function Privacy() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <TouchableOpacity onPress={() => router.back()}>
@@ -54,12 +58,13 @@ export default function Privacy() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  content: { padding: 24, paddingBottom: 48 },
-  back: { color: Colors.accent, fontSize: 16, marginBottom: 16 },
-  title: { fontSize: 24, fontWeight: '800', color: Colors.text, marginBottom: 4 },
-  updated: { color: Colors.textMuted, fontSize: 13, marginBottom: 24 },
-  heading: { fontSize: 17, fontWeight: '700', color: Colors.text, marginTop: 20, marginBottom: 8 },
-  body: { fontSize: 15, color: Colors.textMuted, lineHeight: 22 },
-});
+const createStyles = (colors: ColorScheme) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    content: { padding: 24, paddingBottom: 48 },
+    back: { color: colors.accent, fontSize: 16, marginBottom: 16 },
+    title: { fontSize: 24, fontWeight: '800', color: colors.text, marginBottom: 4 },
+    updated: { color: colors.textMuted, fontSize: 13, marginBottom: 24 },
+    heading: { fontSize: 17, fontWeight: '700', color: colors.text, marginTop: 20, marginBottom: 8 },
+    body: { fontSize: 15, color: colors.textMuted, lineHeight: 22 },
+  });

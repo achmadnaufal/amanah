@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { randomUUID } from 'expo-crypto';
 
 export interface Transaction {
   id: string;
@@ -48,7 +49,7 @@ export const useFinanceStore = create<FinanceState>()(
       budgets: {},
       recurringTemplates: [],
       addTransaction: (tx) => {
-        const newTx: Transaction = { ...tx, id: crypto.randomUUID() };
+        const newTx: Transaction = { ...tx, id: randomUUID() };
         set((state) => ({ transactions: [newTx, ...state.transactions] }));
       },
       updateTransaction: (id, updates) => {
@@ -70,7 +71,7 @@ export const useFinanceStore = create<FinanceState>()(
       },
       addRecurringTemplate: (template) => {
         set((state) => ({
-          recurringTemplates: [...state.recurringTemplates, { ...template, id: crypto.randomUUID() }],
+          recurringTemplates: [...state.recurringTemplates, { ...template, id: randomUUID() }],
         }));
       },
       deleteRecurringTemplate: (id) => {
@@ -87,7 +88,7 @@ export const useFinanceStore = create<FinanceState>()(
         );
         if (toApply.length === 0) return;
         const newTransactions = toApply.map((t) => ({
-          id: crypto.randomUUID(),
+          id: randomUUID(),
           date: new Date(now.getFullYear(), now.getMonth(), t.dayOfMonth).toISOString(),
           amount: t.amount,
           category: t.category,

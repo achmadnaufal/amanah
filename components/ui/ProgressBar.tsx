@@ -1,6 +1,7 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
-import { Colors } from '../../constants/colors';
+import { useTheme } from '../../constants/theme';
+import { ColorScheme } from '../../constants/colors';
 
 interface ProgressBarProps {
   progress: number; // 0-100
@@ -10,6 +11,8 @@ interface ProgressBarProps {
 }
 
 export const ProgressBar: React.FC<ProgressBarProps> = ({ progress, label, showPercent, color }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const pct = Math.min(Math.max(progress, 0), 100);
   const animatedWidth = useRef(new Animated.Value(0)).current;
 
@@ -30,17 +33,18 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({ progress, label, showP
     <View style={styles.container}>
       {label && <Text style={styles.label}>{label}</Text>}
       <View style={styles.track}>
-        <Animated.View style={[styles.fill, { width: widthInterpolation, backgroundColor: color || Colors.accent }]} />
+        <Animated.View style={[styles.fill, { width: widthInterpolation, backgroundColor: color || colors.accent }]} />
       </View>
       {showPercent && <Text style={styles.pct}>{pct.toFixed(1)}%</Text>}
     </View>
   );
 };
 
-const styles = StyleSheet.create({
-  container: { marginVertical: 6 },
-  label: { color: Colors.textMuted, fontSize: 12, marginBottom: 4 },
-  track: { height: 8, backgroundColor: Colors.surfaceAlt, borderRadius: 4, overflow: 'hidden' },
-  fill: { height: '100%', borderRadius: 4 },
-  pct: { color: Colors.accent, fontSize: 12, marginTop: 2, textAlign: 'right' },
-});
+const createStyles = (colors: ColorScheme) =>
+  StyleSheet.create({
+    container: { marginVertical: 6 },
+    label: { color: colors.textMuted, fontSize: 12, marginBottom: 4 },
+    track: { height: 8, backgroundColor: colors.surfaceAlt, borderRadius: 4, overflow: 'hidden' },
+    fill: { height: '100%', borderRadius: 4 },
+    pct: { color: colors.accent, fontSize: 12, marginTop: 2, textAlign: 'right' },
+  });

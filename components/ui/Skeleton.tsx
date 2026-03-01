@@ -1,6 +1,7 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import { View, Animated, StyleSheet, ViewStyle } from 'react-native';
-import { Colors } from '../../constants/colors';
+import { useTheme } from '../../constants/theme';
+import { ColorScheme } from '../../constants/colors';
 
 interface SkeletonProps {
   width: number | string;
@@ -10,6 +11,7 @@ interface SkeletonProps {
 }
 
 export const Skeleton: React.FC<SkeletonProps> = ({ width, height, borderRadius = 8, style }) => {
+  const { colors } = useTheme();
   const opacity = useRef(new Animated.Value(0.3)).current;
 
   useEffect(() => {
@@ -26,27 +28,33 @@ export const Skeleton: React.FC<SkeletonProps> = ({ width, height, borderRadius 
   return (
     <Animated.View
       style={[
-        { width: width as any, height, borderRadius, backgroundColor: Colors.surfaceAlt, opacity },
+        { width: width as any, height, borderRadius, backgroundColor: colors.surfaceAlt, opacity },
         style,
       ]}
     />
   );
 };
 
-export const SkeletonCard: React.FC = () => (
-  <View style={styles.card}>
-    <Skeleton width={100} height={12} />
-    <Skeleton width="60%" height={28} style={{ marginTop: 8 }} />
-  </View>
-);
+export const SkeletonCard: React.FC = () => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: Colors.surface,
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    marginBottom: 12,
-  },
-});
+  return (
+    <View style={styles.card}>
+      <Skeleton width={100} height={12} />
+      <Skeleton width="60%" height={28} style={{ marginTop: 8 }} />
+    </View>
+  );
+};
+
+const createStyles = (colors: ColorScheme) =>
+  StyleSheet.create({
+    card: {
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginBottom: 12,
+    },
+  });

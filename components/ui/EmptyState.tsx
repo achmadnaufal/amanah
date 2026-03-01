@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Colors } from '../../constants/colors';
+import { useTheme } from '../../constants/theme';
+import { ColorScheme } from '../../constants/colors';
 
 interface EmptyStateProps {
   icon: string;
@@ -11,6 +12,9 @@ interface EmptyStateProps {
 }
 
 export const EmptyState: React.FC<EmptyStateProps> = ({ icon, title, subtitle, ctaLabel, onCta }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <View style={styles.container}>
       <Text style={styles.icon}>{icon}</Text>
@@ -25,11 +29,12 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ icon, title, subtitle, c
   );
 };
 
-const styles = StyleSheet.create({
-  container: { alignItems: 'center', paddingVertical: 48, paddingHorizontal: 24 },
-  icon: { fontSize: 48, marginBottom: 16 },
-  title: { fontSize: 18, fontWeight: '700', color: Colors.text, textAlign: 'center', marginBottom: 8 },
-  subtitle: { fontSize: 14, color: Colors.textMuted, textAlign: 'center', lineHeight: 20 },
-  cta: { marginTop: 20, backgroundColor: Colors.primaryLight, borderRadius: 8, paddingHorizontal: 20, paddingVertical: 10 },
-  ctaText: { color: Colors.text, fontWeight: '600', fontSize: 14 },
-});
+const createStyles = (colors: ColorScheme) =>
+  StyleSheet.create({
+    container: { alignItems: 'center', paddingVertical: 48, paddingHorizontal: 24 },
+    icon: { fontSize: 48, marginBottom: 16 },
+    title: { fontSize: 18, fontWeight: '700', color: colors.text, textAlign: 'center', marginBottom: 8 },
+    subtitle: { fontSize: 14, color: colors.textMuted, textAlign: 'center', lineHeight: 20 },
+    cta: { marginTop: 20, backgroundColor: colors.primaryLight, borderRadius: 8, paddingHorizontal: 20, paddingVertical: 10 },
+    ctaText: { color: '#FFFFFF', fontWeight: '600', fontSize: 14 },
+  });

@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Svg, { Polyline, Line, Text as SvgText } from 'react-native-svg';
-import { Colors } from '../../constants/colors';
+import { useTheme } from '../../constants/theme';
+import { ColorScheme } from '../../constants/colors';
 import { formatIDR } from '../../utils/currency';
 
 interface DataPoint {
@@ -15,7 +16,11 @@ interface LineChartProps {
   color?: string;
 }
 
-export const LineChart: React.FC<LineChartProps> = ({ data, height = 160, color = Colors.accent }) => {
+export const LineChart: React.FC<LineChartProps> = ({ data, height = 160, color }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const lineColor = color ?? colors.accent;
+
   if (data.length < 2) return null;
 
   const width = 320;
@@ -42,14 +47,14 @@ export const LineChart: React.FC<LineChartProps> = ({ data, height = 160, color 
           const y = padding.top + chartH * (1 - frac);
           return (
             <Line key={i} x1={padding.left} y1={y} x2={width - padding.right} y2={y}
-              stroke={Colors.border} strokeWidth={0.5} />
+              stroke={colors.border} strokeWidth={0.5} />
           );
         })}
         {/* Line */}
         <Polyline
           points={points}
           fill="none"
-          stroke={color}
+          stroke={lineColor}
           strokeWidth={2.5}
           strokeLinejoin="round"
           strokeLinecap="round"
@@ -59,7 +64,7 @@ export const LineChart: React.FC<LineChartProps> = ({ data, height = 160, color 
           if (data.length > 6 && i % 2 !== 0 && i !== data.length - 1) return null;
           const x = padding.left + (i / (data.length - 1)) * chartW;
           return (
-            <SvgText key={i} x={x} y={height - 4} fontSize={9} fill={Colors.textMuted} textAnchor="middle">
+            <SvgText key={i} x={x} y={height - 4} fontSize={9} fill={colors.textMuted} textAnchor="middle">
               {d.label}
             </SvgText>
           );
@@ -73,8 +78,9 @@ export const LineChart: React.FC<LineChartProps> = ({ data, height = 160, color 
   );
 };
 
-const styles = StyleSheet.create({
-  container: { alignItems: 'center' },
-  rangeRow: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', paddingHorizontal: 8, marginTop: 4 },
-  rangeText: { color: Colors.textMuted, fontSize: 10 },
-});
+const createStyles = (colors: ColorScheme) =>
+  StyleSheet.create({
+    container: { alignItems: 'center' },
+    rangeRow: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', paddingHorizontal: 8, marginTop: 4 },
+    rangeText: { color: colors.textMuted, fontSize: 10 },
+  });

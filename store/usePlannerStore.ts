@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { randomUUID } from 'expo-crypto';
 
 export interface PortfolioAsset {
   id: string;
@@ -33,7 +34,7 @@ export const usePlannerStore = create<PlannerState>()(
       setTarget: (amount) => set({ targetAmount: amount }),
       setMonthlySavings: (amount) => set({ monthlySavings: amount }),
       setAnnualReturnRate: (rate) => set({ annualReturnRate: rate }),
-      addAsset: (asset) => set((s) => ({ portfolioAssets: [...s.portfolioAssets, { ...asset, id: crypto.randomUUID() }] })),
+      addAsset: (asset) => set((s) => ({ portfolioAssets: [...s.portfolioAssets, { ...asset, id: randomUUID() }] })),
       updateAsset: (id, updates) => set((s) => ({
         portfolioAssets: s.portfolioAssets.map((a) => a.id === id ? { ...a, ...updates } : a)
       })),

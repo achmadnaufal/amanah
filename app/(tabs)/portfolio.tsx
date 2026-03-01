@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { Colors } from '../../constants/colors';
+import { useTheme } from '../../constants/theme';
+import { ColorScheme } from '../../constants/colors';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { EmptyState } from '../../components/ui/EmptyState';
@@ -18,6 +19,9 @@ const ASSET_TYPES: { id: PortfolioAsset['type']; label: string; icon: string; co
 ];
 
 export default function Portfolio() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const { portfolioAssets, addAsset, deleteAsset, updateAsset } = usePlannerStore();
   const [modal, setModal] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -120,7 +124,7 @@ export default function Portfolio() {
                       <Text style={styles.assetLabel}>{a.label}</Text>
                       {a.emasGram ? <Text style={styles.assetSub}>{a.emasGram}g gold</Text> : null}
                     </View>
-                    <Text style={[styles.assetValue, { color: at?.color || Colors.accent }]}>{formatIDR(a.valueIDR)}</Text>
+                    <Text style={[styles.assetValue, { color: at?.color || colors.accent }]}>{formatIDR(a.valueIDR)}</Text>
                   </View>
                 </Card>
               </TouchableOpacity>
@@ -146,18 +150,18 @@ export default function Portfolio() {
                   onPress={() => setType(at.id)}
                   style={[styles.typeChip, type === at.id && { borderColor: at.color }]}
                 >
-                  <Text style={{ color: type === at.id ? at.color : Colors.text }}>{at.icon} {at.label}</Text>
+                  <Text style={{ color: type === at.id ? at.color : colors.text }}>{at.icon} {at.label}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
 
-            <TextInput style={styles.input} placeholder="Label / Name" placeholderTextColor={Colors.textMuted} value={label} onChangeText={setLabel} />
+            <TextInput style={styles.input} placeholder="Label / Name" placeholderTextColor={colors.textMuted} value={label} onChangeText={setLabel} />
 
             {type === 'emas' && (
-              <TextInput style={styles.input} placeholder="Weight in grams" placeholderTextColor={Colors.textMuted} keyboardType="decimal-pad" value={emasGramStr} onChangeText={setEmasGramStr} />
+              <TextInput style={styles.input} placeholder="Weight in grams" placeholderTextColor={colors.textMuted} keyboardType="decimal-pad" value={emasGramStr} onChangeText={setEmasGramStr} />
             )}
 
-            <TextInput style={styles.input} placeholder="Value (IDR)" placeholderTextColor={Colors.textMuted} keyboardType="numeric" value={valueStr} onChangeText={setValueStr} />
+            <TextInput style={styles.input} placeholder="Value (IDR)" placeholderTextColor={colors.textMuted} keyboardType="numeric" value={valueStr} onChangeText={setValueStr} />
 
             <View style={{ flexDirection: 'row', gap: 8 }}>
               <Button title="Cancel" variant="secondary" onPress={() => setModal(false)} style={{ flex: 1 }} />
@@ -170,32 +174,32 @@ export default function Portfolio() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  sectionLabel: { color: Colors.textMuted, fontSize: 12, fontWeight: '600', textTransform: 'uppercase', marginBottom: 8 },
-  totalAmount: { fontSize: 28, fontWeight: '800', color: Colors.accent },
-  hint: { color: Colors.success, fontSize: 12, marginTop: 4 },
-  allocRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
-  allocIcon: { fontSize: 16, marginRight: 6 },
-  allocLabel: { flex: 1, fontSize: 13 },
-  allocPct: { color: Colors.textMuted, fontSize: 12, marginRight: 8 },
-  allocValue: { color: Colors.text, fontSize: 13, fontWeight: '600' },
-  allocBarTrack: { height: 6, backgroundColor: Colors.surfaceAlt, borderRadius: 3, marginBottom: 10 },
-  allocBarFill: { height: '100%', borderRadius: 3 },
-  listTitle: { color: Colors.text, fontWeight: '700', fontSize: 15, marginBottom: 8, marginTop: 4 },
-  empty: { color: Colors.textMuted, textAlign: 'center', marginTop: 20 },
-  assetRow: { flexDirection: 'row', alignItems: 'center' },
-  assetIcon: { fontSize: 22, marginRight: 10 },
-  assetInfo: { flex: 1 },
-  assetLabel: { color: Colors.text, fontWeight: '500' },
-  assetSub: { color: Colors.textMuted, fontSize: 12 },
-  assetValue: { fontWeight: '700', fontSize: 15 },
-  fab: { position: 'absolute', bottom: 24, right: 24, backgroundColor: Colors.accent, width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
-  fabText: { fontSize: 28, color: Colors.background, fontWeight: '700', lineHeight: 32 },
-  modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
-  modal: { backgroundColor: Colors.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20 },
-  modalTitle: { color: Colors.text, fontSize: 18, fontWeight: '700', marginBottom: 16, textAlign: 'center' },
-  inputLabel: { color: Colors.textMuted, fontSize: 12, marginBottom: 6 },
-  input: { backgroundColor: Colors.surfaceAlt, borderRadius: 8, padding: 12, color: Colors.text, marginBottom: 12, borderWidth: 1, borderColor: Colors.border },
-  typeChip: { backgroundColor: Colors.surfaceAlt, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 8, marginRight: 8, borderWidth: 1, borderColor: Colors.border },
-});
+const createStyles = (colors: ColorScheme) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    sectionLabel: { color: colors.textMuted, fontSize: 12, fontWeight: '600', textTransform: 'uppercase', marginBottom: 8 },
+    totalAmount: { fontSize: 28, fontWeight: '800', color: colors.accent },
+    hint: { color: colors.success, fontSize: 12, marginTop: 4 },
+    allocRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
+    allocIcon: { fontSize: 16, marginRight: 6 },
+    allocLabel: { flex: 1, fontSize: 13 },
+    allocPct: { color: colors.textMuted, fontSize: 12, marginRight: 8 },
+    allocValue: { color: colors.text, fontSize: 13, fontWeight: '600' },
+    allocBarTrack: { height: 6, backgroundColor: colors.surfaceAlt, borderRadius: 3, marginBottom: 10 },
+    allocBarFill: { height: '100%', borderRadius: 3 },
+    listTitle: { color: colors.text, fontWeight: '700', fontSize: 15, marginBottom: 8, marginTop: 4 },
+    assetRow: { flexDirection: 'row', alignItems: 'center' },
+    assetIcon: { fontSize: 22, marginRight: 10 },
+    assetInfo: { flex: 1 },
+    assetLabel: { color: colors.text, fontWeight: '500' },
+    assetSub: { color: colors.textMuted, fontSize: 12 },
+    assetValue: { fontWeight: '700', fontSize: 15 },
+    fab: { position: 'absolute', bottom: 24, right: 24, backgroundColor: colors.accent, width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
+    fabText: { fontSize: 28, color: '#FFFFFF', fontWeight: '700', lineHeight: 32 },
+    modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
+    modal: { backgroundColor: colors.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20 },
+    modalTitle: { color: colors.text, fontSize: 18, fontWeight: '700', marginBottom: 16, textAlign: 'center' },
+    inputLabel: { color: colors.textMuted, fontSize: 12, marginBottom: 6 },
+    input: { backgroundColor: colors.surfaceAlt, borderRadius: 8, padding: 12, color: colors.text, marginBottom: 12, borderWidth: 1, borderColor: colors.border },
+    typeChip: { backgroundColor: colors.surfaceAlt, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 8, marginRight: 8, borderWidth: 1, borderColor: colors.border },
+  });

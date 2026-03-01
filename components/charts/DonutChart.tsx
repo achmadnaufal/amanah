@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { Colors } from '../../constants/colors';
+import { useTheme } from '../../constants/theme';
+import { ColorScheme } from '../../constants/colors';
 import { formatIDR } from '../../utils/currency';
 
 interface Slice {
@@ -29,6 +30,8 @@ function polarToCartesian(cx: number, cy: number, r: number, angleDeg: number) {
 }
 
 export const DonutChart: React.FC<DonutChartProps> = ({ data, size = 160, strokeWidth = 20 }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const total = data.reduce((s, d) => s + d.value, 0);
   if (total === 0) return null;
 
@@ -73,11 +76,12 @@ export const DonutChart: React.FC<DonutChartProps> = ({ data, size = 160, stroke
   );
 };
 
-const styles = StyleSheet.create({
-  container: { alignItems: 'center' },
-  legend: { marginTop: 12, width: '100%' },
-  legendRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
-  legendDot: { width: 10, height: 10, borderRadius: 5, marginRight: 8 },
-  legendLabel: { flex: 1, color: Colors.text, fontSize: 13 },
-  legendValue: { color: Colors.textMuted, fontSize: 12 },
-});
+const createStyles = (colors: ColorScheme) =>
+  StyleSheet.create({
+    container: { alignItems: 'center' },
+    legend: { marginTop: 12, width: '100%' },
+    legendRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
+    legendDot: { width: 10, height: 10, borderRadius: 5, marginRight: 8 },
+    legendLabel: { flex: 1, color: colors.text, fontSize: 13 },
+    legendValue: { color: colors.textMuted, fontSize: 12 },
+  });

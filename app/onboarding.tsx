@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { router } from 'expo-router';
-import { Colors } from '../constants/colors';
+import { useTheme } from '../constants/theme';
+import { ColorScheme } from '../constants/colors';
 import { useAppStore } from '../store/useAppStore';
 
 const { width } = Dimensions.get('window');
@@ -25,6 +26,9 @@ const PAGES = [
 ];
 
 export default function Onboarding() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const [page, setPage] = useState(0);
   const setOnboarded = useAppStore((s) => s.setOnboarded);
 
@@ -75,17 +79,18 @@ export default function Onboarding() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background, justifyContent: 'space-between', padding: 32 },
-  content: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  icon: { fontSize: 64, marginBottom: 24 },
-  title: { fontSize: 28, fontWeight: '800', color: Colors.text, textAlign: 'center', marginBottom: 16 },
-  subtitle: { fontSize: 16, color: Colors.textMuted, textAlign: 'center', lineHeight: 24, paddingHorizontal: 16 },
-  footer: { alignItems: 'center', paddingBottom: 32 },
-  dots: { flexDirection: 'row', marginBottom: 24 },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.surfaceAlt, marginHorizontal: 4 },
-  dotActive: { backgroundColor: Colors.accent, width: 24 },
-  button: { backgroundColor: Colors.primaryLight, borderRadius: 12, paddingVertical: 16, paddingHorizontal: 48, width: width - 64, alignItems: 'center' },
-  buttonText: { color: Colors.text, fontSize: 17, fontWeight: '700' },
-  skipText: { color: Colors.textMuted, fontSize: 14, marginTop: 16 },
-});
+const createStyles = (colors: ColorScheme) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background, justifyContent: 'space-between', padding: 32 },
+    content: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    icon: { fontSize: 64, marginBottom: 24 },
+    title: { fontSize: 28, fontWeight: '800', color: colors.text, textAlign: 'center', marginBottom: 16 },
+    subtitle: { fontSize: 16, color: colors.textMuted, textAlign: 'center', lineHeight: 24, paddingHorizontal: 16 },
+    footer: { alignItems: 'center', paddingBottom: 32 },
+    dots: { flexDirection: 'row', marginBottom: 24 },
+    dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.surfaceAlt, marginHorizontal: 4 },
+    dotActive: { backgroundColor: colors.accent, width: 24 },
+    button: { backgroundColor: colors.primaryLight, borderRadius: 12, paddingVertical: 16, paddingHorizontal: 48, width: width - 64, alignItems: 'center' },
+    buttonText: { color: '#FFFFFF', fontSize: 17, fontWeight: '700' },
+    skipText: { color: colors.textMuted, fontSize: 14, marginTop: 16 },
+  });

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { randomUUID } from 'expo-crypto';
 
 export interface ZakatAssets {
   uangTunai: number;
@@ -42,7 +43,7 @@ export const useZakatStore = create<ZakatState>()(
       setAssets: (a) => set((s) => ({ assets: { ...s.assets, ...a } })),
       setLiabilities: (l) => set((s) => ({ liabilities: { ...s.liabilities, ...l } })),
       setGoldPrice: (price) => set({ goldPricePerGram: price }),
-      addPayment: (p) => set((s) => ({ payments: [{ ...p, id: crypto.randomUUID() }, ...s.payments] })),
+      addPayment: (p) => set((s) => ({ payments: [{ ...p, id: randomUUID() }, ...s.payments] })),
     }),
     {
       name: 'amanah-zakat-store',

@@ -1,6 +1,7 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Colors } from '../constants/colors';
+import { ThemeContext } from '../constants/theme';
+import { ColorScheme, DarkColors } from '../constants/colors';
 
 interface Props {
   children: ReactNode;
@@ -12,6 +13,8 @@ interface State {
 }
 
 export class ErrorBoundary extends Component<Props, State> {
+  static contextType = ThemeContext;
+
   state: State = { hasError: false, error: null };
 
   static getDerivedStateFromError(error: Error): State {
@@ -28,6 +31,10 @@ export class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
+      const themeCtx = this.context as React.ContextType<typeof ThemeContext> | undefined;
+      const colors = themeCtx?.colors ?? DarkColors;
+      const styles = createStyles(colors);
+
       return (
         <View style={styles.container}>
           <Text style={styles.icon}>⚠️</Text>
@@ -46,17 +53,18 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-  },
-  icon: { fontSize: 48, marginBottom: 16 },
-  title: { fontSize: 20, fontWeight: '700', color: Colors.text, marginBottom: 8 },
-  message: { fontSize: 14, color: Colors.textMuted, textAlign: 'center', marginBottom: 24, lineHeight: 20 },
-  button: { backgroundColor: Colors.primaryLight, borderRadius: 8, paddingHorizontal: 24, paddingVertical: 12 },
-  buttonText: { color: Colors.text, fontWeight: '600', fontSize: 15 },
-});
+const createStyles = (colors: ColorScheme) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 32,
+    },
+    icon: { fontSize: 48, marginBottom: 16 },
+    title: { fontSize: 20, fontWeight: '700', color: colors.text, marginBottom: 8 },
+    message: { fontSize: 14, color: colors.textMuted, textAlign: 'center', marginBottom: 24, lineHeight: 20 },
+    button: { backgroundColor: colors.primaryLight, borderRadius: 8, paddingHorizontal: 24, paddingVertical: 12 },
+    buttonText: { color: '#FFFFFF', fontWeight: '600', fontSize: 15 },
+  });

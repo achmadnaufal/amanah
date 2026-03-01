@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity, Modal,
   TextInput, Alert, Platform,
@@ -6,7 +6,8 @@ import {
 import { Swipeable } from 'react-native-gesture-handler';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Haptics from 'expo-haptics';
-import { Colors } from '../../constants/colors';
+import { useTheme } from '../../constants/theme';
+import { ColorScheme } from '../../constants/colors';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { EmptyState } from '../../components/ui/EmptyState';
@@ -17,6 +18,9 @@ import { INCOME_CATEGORIES, EXPENSE_CATEGORIES, ALL_CATEGORIES, getCategoryById 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 export default function Transactions() {
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const { transactions, addTransaction, updateTransaction, deleteTransaction } = useFinanceStore();
   const now = new Date();
   const [filterYear, setFilterYear] = useState(now.getFullYear());
@@ -137,7 +141,7 @@ export default function Transactions() {
         <TextInput
           style={styles.searchInput}
           placeholder="Search notes or categories..."
-          placeholderTextColor={Colors.textMuted}
+          placeholderTextColor={colors.textMuted}
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
@@ -192,7 +196,7 @@ export default function Transactions() {
                             <Text style={styles.txCat}>{cat?.label || tx.category}</Text>
                             {tx.note ? <Text style={styles.txNote}>{tx.note}</Text> : null}
                           </View>
-                          <Text style={[styles.txAmount, { color: tx.type === 'income' ? Colors.success : Colors.error }]}>
+                          <Text style={[styles.txAmount, { color: tx.type === 'income' ? colors.success : colors.error }]}>
                             {tx.type === 'income' ? '+' : '-'}{formatIDR(tx.amount)}
                           </Text>
                         </View>
@@ -218,21 +222,26 @@ export default function Transactions() {
             <Text style={styles.modalTitle}>{editingTx ? 'Edit Transaction' : 'Add Transaction'}</Text>
 
             <View style={styles.typeRow}>
-              {(['income', 'expense'] as const).map((t) => (
-                <TouchableOpacity
-                  key={t}
-                  style={[styles.typeBtn, txType === t && { backgroundColor: t === 'income' ? Colors.success : Colors.error }]}
-                  onPress={() => { setTxType(t); setCategory(''); }}
-                >
-                  <Text style={styles.typeBtnText}>{t === 'income' ? '📈 Income' : '📉 Expense'}</Text>
-                </TouchableOpacity>
-              ))}
+              {(['income', 'expense'] as const).map((t) => {
+                const isSelected = txType === t;
+                return (
+                  <TouchableOpacity
+                    key={t}
+                    style={[styles.typeBtn, isSelected && { backgroundColor: t === 'income' ? colors.success : colors.error }]}
+                    onPress={() => { setTxType(t); setCategory(''); }}
+                  >
+                    <Text style={[styles.typeBtnText, isSelected && { color: '#FFFFFF' }]}>
+                      {t === 'income' ? '📈 Income' : '📉 Expense'}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
 
             <TextInput
               style={styles.input}
               placeholder="Amount (IDR)"
-              placeholderTextColor={Colors.textMuted}
+              placeholderTextColor={colors.textMuted}
               keyboardType="numeric"
               value={amount}
               onChangeText={setAmount}
@@ -256,7 +265,7 @@ export default function Transactions() {
                   setShowDatePicker(Platform.OS !== 'ios');
                   if (selectedDate) setTxDate(selectedDate);
                 }}
-                themeVariant="dark"
+                themeVariant={isDark ? 'dark' : 'light'}
               />
             )}
             {showDatePicker && Platform.OS === 'ios' && (
@@ -269,7 +278,7 @@ export default function Transactions() {
                 <TouchableOpacity
                   key={c.id}
                   onPress={() => setCategory(c.id)}
-                  style={[styles.catChip, category === c.id && { borderColor: Colors.accent }]}
+                  style={[styles.catChip, category === c.id && { borderColor: colors.accent }]}
                 >
                   <Text style={styles.catChipText}>{c.icon} {c.label}</Text>
                 </TouchableOpacity>
@@ -279,7 +288,7 @@ export default function Transactions() {
             <TextInput
               style={styles.input}
               placeholder="Note (optional)"
-              placeholderTextColor={Colors.textMuted}
+              placeholderTextColor={colors.textMuted}
               value={note}
               onChangeText={setNote}
             />
@@ -295,42 +304,43 @@ export default function Transactions() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  monthBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, backgroundColor: Colors.surface, borderBottomWidth: 1, borderBottomColor: Colors.border },
-  arrow: { color: Colors.accent, fontSize: 18, padding: 4 },
-  monthLabel: { color: Colors.text, fontSize: 16, fontWeight: '700' },
-  searchBar: { paddingHorizontal: 16, paddingTop: 8 },
-  searchInput: { backgroundColor: Colors.surfaceAlt, borderRadius: 8, padding: 10, color: Colors.text, borderWidth: 1, borderColor: Colors.border, fontSize: 14 },
-  filterChips: { maxHeight: 40, marginTop: 8, marginBottom: 4 },
-  filterChip: { backgroundColor: Colors.surfaceAlt, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6, marginRight: 6, borderWidth: 1, borderColor: Colors.border },
-  filterChipActive: { borderColor: Colors.accent, backgroundColor: Colors.primary },
-  filterChipText: { color: Colors.textMuted, fontSize: 12 },
-  filterChipTextActive: { color: Colors.accent },
-  dateHeader: { color: Colors.textMuted, fontSize: 12, fontWeight: '600', marginTop: 8, marginBottom: 4 },
-  txCard: { marginBottom: 8 },
-  txRow: { flexDirection: 'row', alignItems: 'center' },
-  txIcon: { fontSize: 22, marginRight: 10 },
-  txInfo: { flex: 1 },
-  txCat: { color: Colors.text, fontWeight: '500' },
-  txNote: { color: Colors.textMuted, fontSize: 12 },
-  txAmount: { fontSize: 14, fontWeight: '700' },
-  swipeDelete: { backgroundColor: Colors.error, justifyContent: 'center', alignItems: 'center', width: 80, borderRadius: 12, marginBottom: 8, marginLeft: 8 },
-  swipeDeleteText: { color: '#fff', fontWeight: '700', fontSize: 13 },
-  fab: { position: 'absolute', bottom: 24, right: 24, backgroundColor: Colors.accent, width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', elevation: 4 },
-  fabText: { fontSize: 28, color: Colors.background, fontWeight: '700', lineHeight: 32 },
-  modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
-  modal: { backgroundColor: Colors.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20 },
-  modalTitle: { color: Colors.text, fontSize: 18, fontWeight: '700', marginBottom: 16, textAlign: 'center' },
-  typeRow: { flexDirection: 'row', marginBottom: 12, gap: 8 },
-  typeBtn: { flex: 1, padding: 10, borderRadius: 8, alignItems: 'center', backgroundColor: Colors.surfaceAlt },
-  typeBtnText: { color: Colors.text, fontWeight: '600' },
-  input: { backgroundColor: Colors.surfaceAlt, borderRadius: 8, padding: 12, color: Colors.text, marginBottom: 12, borderWidth: 1, borderColor: Colors.border },
-  dateBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surfaceAlt, borderRadius: 8, padding: 12, marginBottom: 12, borderWidth: 1, borderColor: Colors.border },
-  dateBtnLabel: { color: Colors.textMuted, fontSize: 14 },
-  dateBtnValue: { color: Colors.accent, fontSize: 14, fontWeight: '600' },
-  sectionLabel: { color: Colors.textMuted, fontSize: 12, fontWeight: '600', marginBottom: 6 },
-  catChip: { backgroundColor: Colors.surfaceAlt, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, marginRight: 8, borderWidth: 1, borderColor: Colors.border },
-  catChipText: { color: Colors.text, fontSize: 13 },
-  modalBtns: { flexDirection: 'row', marginTop: 8 },
-});
+const createStyles = (colors: ColorScheme) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    monthBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.border },
+    arrow: { color: colors.accent, fontSize: 18, padding: 4 },
+    monthLabel: { color: colors.text, fontSize: 16, fontWeight: '700' },
+    searchBar: { paddingHorizontal: 16, paddingTop: 8 },
+    searchInput: { backgroundColor: colors.surface, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 14, color: colors.text, borderWidth: 1, borderColor: colors.border, fontSize: 14, lineHeight: 18 },
+    filterChips: { maxHeight: 36, marginTop: 8, marginBottom: 4 },
+    filterChip: { backgroundColor: 'transparent', borderRadius: 14, paddingHorizontal: 10, paddingTop: 5, paddingBottom: 6, marginRight: 6, borderWidth: 1, borderColor: colors.border, alignItems: 'center' as const, justifyContent: 'center' as const },
+    filterChipActive: { borderColor: colors.accent, backgroundColor: colors.accent },
+    filterChipText: { color: colors.text, fontSize: 11, lineHeight: 14, includeFontPadding: false, textAlignVertical: 'center' as const },
+    filterChipTextActive: { color: '#FFFFFF', fontWeight: '600' },
+    dateHeader: { color: colors.textMuted, fontSize: 12, fontWeight: '600', marginTop: 8, marginBottom: 4 },
+    txCard: { marginBottom: 8 },
+    txRow: { flexDirection: 'row', alignItems: 'center' },
+    txIcon: { fontSize: 22, marginRight: 10 },
+    txInfo: { flex: 1 },
+    txCat: { color: colors.text, fontWeight: '500' },
+    txNote: { color: colors.textMuted, fontSize: 12 },
+    txAmount: { fontSize: 14, fontWeight: '700' },
+    swipeDelete: { backgroundColor: colors.error, justifyContent: 'center', alignItems: 'center', width: 80, borderRadius: 12, marginBottom: 8, marginLeft: 8 },
+    swipeDeleteText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+    fab: { position: 'absolute', bottom: 24, right: 24, backgroundColor: colors.accent, width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', elevation: 4 },
+    fabText: { fontSize: 28, color: '#FFFFFF', fontWeight: '700', lineHeight: 32 },
+    modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
+    modal: { backgroundColor: colors.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20 },
+    modalTitle: { color: colors.text, fontSize: 18, fontWeight: '700', marginBottom: 16, textAlign: 'center' },
+    typeRow: { flexDirection: 'row', marginBottom: 12, gap: 8 },
+    typeBtn: { flex: 1, padding: 10, borderRadius: 8, alignItems: 'center', backgroundColor: colors.surfaceAlt },
+    typeBtnText: { color: colors.text, fontWeight: '600' },
+    input: { backgroundColor: colors.surfaceAlt, borderRadius: 8, padding: 12, color: colors.text, marginBottom: 12, borderWidth: 1, borderColor: colors.border },
+    dateBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surfaceAlt, borderRadius: 8, padding: 12, marginBottom: 12, borderWidth: 1, borderColor: colors.border },
+    dateBtnLabel: { color: colors.textMuted, fontSize: 14 },
+    dateBtnValue: { color: colors.accent, fontSize: 14, fontWeight: '600' },
+    sectionLabel: { color: colors.textMuted, fontSize: 12, fontWeight: '600', marginBottom: 6 },
+    catChip: { backgroundColor: colors.surfaceAlt, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, marginRight: 8, borderWidth: 1, borderColor: colors.border },
+    catChipText: { color: colors.text, fontSize: 13 },
+    modalBtns: { flexDirection: 'row', marginTop: 8 },
+  });

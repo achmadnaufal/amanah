@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, TextInput, Modal } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { Colors } from '../../constants/colors';
+import { useTheme } from '../../constants/theme';
+import { ColorScheme } from '../../constants/colors';
 import { Card } from '../../components/ui/Card';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
 import { Button } from '../../components/ui/Button';
@@ -11,6 +12,9 @@ import { formatIDR } from '../../utils/currency';
 import { calculateZakat, NISAB_GOLD_GRAMS } from '../../utils/zakat';
 
 export default function ZakatScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const { assets, liabilities, goldPricePerGram, payments, setAssets, setLiabilities, setGoldPrice, addPayment } = useZakatStore();
   const [payModal, setPayModal] = useState(false);
   const [payNote, setPayNote] = useState('');
@@ -53,7 +57,7 @@ export default function ZakatScreen() {
               onChangeText={(v) => setAssets({ emasGram: parseFloat(v) || 0 })}
               keyboardType="decimal-pad"
               placeholder="0"
-              placeholderTextColor={Colors.textMuted}
+              placeholderTextColor={colors.textMuted}
             />
           </View>
           <View style={{ flex: 1, paddingLeft: 8 }}>
@@ -80,7 +84,7 @@ export default function ZakatScreen() {
       </Card>
 
       {/* Result */}
-      <Card style={{ borderColor: isWajib ? Colors.accent : Colors.border }}>
+      <Card style={{ borderColor: isWajib ? colors.accent : colors.border }}>
         <Text style={styles.sectionTitle}>🌙 Zakat Calculation</Text>
         <View style={styles.resultRow}>
           <Text style={styles.resultLabel}>Nisab threshold:</Text>
@@ -92,7 +96,7 @@ export default function ZakatScreen() {
         </View>
         <View style={styles.resultRow}>
           <Text style={styles.resultLabel}>Status:</Text>
-          <Text style={[styles.resultValue, { color: isWajib ? Colors.accent : Colors.textMuted }]}>
+          <Text style={[styles.resultValue, { color: isWajib ? colors.accent : colors.textMuted }]}>
             {isWajib ? '✅ Zakat Due' : '⏳ Below Nisab'}
           </Text>
         </View>
@@ -100,7 +104,7 @@ export default function ZakatScreen() {
           <>
             <View style={styles.resultRow}>
               <Text style={styles.resultLabel}>Zakat (2.5%):</Text>
-              <Text style={[styles.resultValue, { color: Colors.accent, fontSize: 20, fontWeight: '800' }]}>{formatIDR(zakatAmount)}</Text>
+              <Text style={[styles.resultValue, { color: colors.accent, fontSize: 20, fontWeight: '800' }]}>{formatIDR(zakatAmount)}</Text>
             </View>
             <Button title="Record Zakat Payment" onPress={() => setPayModal(true)} style={{ marginTop: 8 }} />
           </>
@@ -123,7 +127,7 @@ export default function ZakatScreen() {
                 <Text style={styles.payDate}>{new Date(p.date).toLocaleDateString('en-US')}</Text>
                 {p.note ? <Text style={styles.payNote}>{p.note}</Text> : null}
               </View>
-              <Text style={[styles.resultValue, { color: Colors.accent }]}>{formatIDR(p.amount)}</Text>
+              <Text style={[styles.resultValue, { color: colors.accent }]}>{formatIDR(p.amount)}</Text>
             </View>
           ))
         )}
@@ -138,7 +142,7 @@ export default function ZakatScreen() {
             <TextInput
               style={styles.noteInput}
               placeholder="Note (optional)"
-              placeholderTextColor={Colors.textMuted}
+              placeholderTextColor={colors.textMuted}
               value={payNote}
               onChangeText={setPayNote}
             />
@@ -153,26 +157,27 @@ export default function ZakatScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  sectionTitle: { color: Colors.text, fontWeight: '700', fontSize: 15, marginBottom: 12 },
-  hint: { color: Colors.textMuted, fontSize: 12 },
-  goldRow: { flexDirection: 'row', marginBottom: 12 },
-  inputLabel: { color: Colors.textMuted, fontSize: 13, marginBottom: 4 },
-  gramInput: { backgroundColor: Colors.surfaceAlt, borderRadius: 8, padding: 10, color: Colors.text, borderWidth: 1, borderColor: Colors.border },
-  goldValue: { color: Colors.accent, fontSize: 16, fontWeight: '700', padding: 10 },
-  totalRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8, borderTopWidth: 1, borderTopColor: Colors.border, paddingTop: 8 },
-  totalLabel: { color: Colors.textMuted, fontWeight: '600' },
-  totalValue: { color: Colors.text, fontWeight: '700', fontSize: 16 },
-  resultRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  resultLabel: { color: Colors.textMuted },
-  resultValue: { color: Colors.text, fontWeight: '600' },
-  payRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: Colors.border },
-  payDate: { color: Colors.text, fontSize: 14 },
-  payNote: { color: Colors.textMuted, fontSize: 12 },
-  modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', padding: 20 },
-  modal: { backgroundColor: Colors.surface, borderRadius: 16, padding: 20 },
-  modalTitle: { color: Colors.text, fontWeight: '700', fontSize: 16, textAlign: 'center', marginBottom: 8 },
-  modalAmount: { color: Colors.accent, fontSize: 24, fontWeight: '800', textAlign: 'center', marginBottom: 16 },
-  noteInput: { backgroundColor: Colors.surfaceAlt, borderRadius: 8, padding: 12, color: Colors.text, marginBottom: 12, borderWidth: 1, borderColor: Colors.border },
-});
+const createStyles = (colors: ColorScheme) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    sectionTitle: { color: colors.text, fontWeight: '700', fontSize: 15, marginBottom: 12 },
+    hint: { color: colors.textMuted, fontSize: 12 },
+    goldRow: { flexDirection: 'row', marginBottom: 12 },
+    inputLabel: { color: colors.textMuted, fontSize: 13, marginBottom: 4 },
+    gramInput: { backgroundColor: colors.surfaceAlt, borderRadius: 8, padding: 10, color: colors.text, borderWidth: 1, borderColor: colors.border },
+    goldValue: { color: colors.accent, fontSize: 16, fontWeight: '700', padding: 10 },
+    totalRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 8 },
+    totalLabel: { color: colors.textMuted, fontWeight: '600' },
+    totalValue: { color: colors.text, fontWeight: '700', fontSize: 16 },
+    resultRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+    resultLabel: { color: colors.textMuted },
+    resultValue: { color: colors.text, fontWeight: '600' },
+    payRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.border },
+    payDate: { color: colors.text, fontSize: 14 },
+    payNote: { color: colors.textMuted, fontSize: 12 },
+    modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', padding: 20 },
+    modal: { backgroundColor: colors.surface, borderRadius: 16, padding: 20 },
+    modalTitle: { color: colors.text, fontWeight: '700', fontSize: 16, textAlign: 'center', marginBottom: 8 },
+    modalAmount: { color: colors.accent, fontSize: 24, fontWeight: '800', textAlign: 'center', marginBottom: 16 },
+    noteInput: { backgroundColor: colors.surfaceAlt, borderRadius: 8, padding: 12, color: colors.text, marginBottom: 12, borderWidth: 1, borderColor: colors.border },
+  });
