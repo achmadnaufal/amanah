@@ -13,7 +13,8 @@
       "backgroundColor": "#0D1117"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.amanah"
     },
     "android": {
       "adaptiveIcon": {
