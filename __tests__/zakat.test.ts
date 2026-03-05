@@ -74,3 +74,59 @@ describe('Zakat Calculator', () => {
     });
   });
 });
+
+
+import { calculateBusinessZakat, zakatSavingsPlan } from '../utils/zakat';
+
+describe('Business Zakat (Zakat al-Tijarah)', () => {
+  const goldPrice = 1_200_000;
+  const nisab = 85 * goldPrice; // 102,000,000
+
+  it('should calculate zakatable assets as inventory + receivables - liabilities', () => {
+    const result = calculateBusinessZakat(80_000_000, 40_000_000, 10_000_000, goldPrice);
+    expect(result.zakatablyAssets).toBe(110_000_000);
+  });
+
+  it('should flag isWajib when zakatable assets >= nisab', () => {
+    const result = calculateBusinessZakat(100_000_000, 20_000_000, 0, goldPrice);
+    expect(result.isWajib).toBe(true);
+  });
+
+  it('should return zero zakat when below nisab', () => {
+    const result = calculateBusinessZakat(50_000_000, 10_000_000, 0, goldPrice);
+    expect(result.isWajib).toBe(false);
+    expect(result.zakatAmount).toBe(0);
+  });
+
+  it('should clip zakatable assets to zero when liabilities exceed assets', () => {
+    const result = calculateBusinessZakat(10_000_000, 5_000_000, 20_000_000, goldPrice);
+    expect(result.zakatablyAssets).toBe(0);
+    expect(result.isWajib).toBe(false);
+  });
+
+  it('should apply 2.5% rate on zakatable assets', () => {
+    const result = calculateBusinessZakat(110_000_000, 0, 0, goldPrice);
+    expect(result.zakatAmount).toBeCloseTo(110_000_000 * 0.025, 2);
+  });
+});
+
+describe('Zakat Savings Plan', () => {
+  it('should calculate monthly savings', () => {
+    const result = zakatSavingsPlan(12_000_000, 12);
+    expect(result.monthlySavings).toBe(1_000_000);
+  });
+
+  it('should handle single month remaining', () => {
+    const result = zakatSavingsPlan(5_000_000, 1);
+    expect(result.monthlySavings).toBe(5_000_000);
+  });
+
+  it('should throw on invalid monthsRemaining', () => {
+    expect(() => zakatSavingsPlan(1_000_000, 0)).toThrow();
+    expect(() => zakatSavingsPlan(1_000_000, 13)).toThrow();
+  });
+
+  it('should throw on negative zakat amount', () => {
+    expect(() => zakatSavingsPlan(-100_000, 6)).toThrow();
+  });
+});

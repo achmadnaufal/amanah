@@ -133,3 +133,41 @@ Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) before
 ## 📄 License
 
 MIT © [Achmad Naufal](https://github.com/achmadnaufal)
+
+---
+
+## [v1.3.0] New Features (2026-03-05)
+
+### Business Zakat Calculator (Zakat al-Tijarah)
+
+Calculate Zakat on business inventory and trade receivables:
+
+```typescript
+import { calculateBusinessZakat } from './utils/zakat';
+
+const result = calculateBusinessZakat(
+  80_000_000,  // inventory (IDR)
+  40_000_000,  // receivables (IDR)
+  10_000_000,  // current liabilities (IDR)
+);
+// { zakatablyAssets: 110_000_000, isWajib: true, zakatAmount: 2_750_000 }
+```
+
+### Zakat Savings Planner
+
+Plan monthly savings toward your annual Zakat obligation:
+
+```typescript
+import { zakatSavingsPlan } from './utils/zakat';
+
+const plan = zakatSavingsPlan(12_000_000, 12); // IDR 12M zakat, 12 months
+// { monthlySavings: 1_000_000, totalPlan: 12_000_000, isRealistic: true }
+```
+
+### Testing
+
+New tests added for business Zakat and savings planner:
+
+```bash
+npx jest __tests__/zakat.test.ts
+```
